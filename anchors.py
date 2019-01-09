@@ -19,8 +19,8 @@ class Anchors(nn.Module):
             self.scales = np.array([2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)])
 
     def forward(self, image):
-        print("anchor")
-        print(image.shape)
+        # print("anchor")
+        # print(image.shape)
         image_shape = image.shape[2:]
         # print("anchor")
         # print(image_shape)
