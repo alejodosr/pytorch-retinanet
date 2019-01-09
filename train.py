@@ -211,7 +211,10 @@ def main(args=None):
 
         scheduler.step(np.mean(epoch_loss))
 
+        # Saving model
+        print("Saving model at epoch: " + str(epoch_num))
         torch.save(retinanet.module, '{}_retinanet_{}.pt'.format(parser.dataset, epoch_num))
+        torch.save(retinanet.state_dict(), '{}_retinanet_state_dict_{}.pt'.format(parser.dataset, epoch_num))
 
     retinanet.eval()
 
