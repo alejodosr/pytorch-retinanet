@@ -28,6 +28,8 @@ from torch.utils.data import Dataset, DataLoader
 import coco_eval
 import csv_eval
 
+from tensorboardX import SummaryWriter
+
 assert torch.__version__.split('.')[1] == '4'
 
 print('CUDA available: {}'.format(torch.cuda.is_available()))
@@ -144,6 +146,8 @@ def main(args=None):
 
     print('Num training images: {}'.format(len(dataset_train)))
 
+    writer = SummaryWriter('experiments')
+
     for epoch_num in range(parser.epochs):
 
         retinanet.train()
@@ -178,9 +182,14 @@ def main(args=None):
 
                 epoch_loss.append(float(loss))
 
-                print(
-                    '\r Epoch: {} | Iteration: {} | Classification loss: {:1.5f} | Regression loss: {:1.5f} | Running loss: {:1.5f}'.format(
-                        epoch_num, iter_num, float(classification_loss), float(regression_loss), np.mean(loss_hist)))
+                # print(
+                #     '\r Epoch: {} | Iteration: {} | Classification loss: {:1.5f} | Regression loss: {:1.5f} | Running loss: {:1.5f}'.format(
+                #         epoch_num, iter_num, float(classification_loss), float(regression_loss), np.mean(loss_hist)))
+
+                # Plot in tensorboard
+                writer.add_scalar('Classification loss', float(classification_loss), iter_num)
+                writer.add_scalar('Regression loss', float(regression_loss), iter_num)
+                writer.add_scalar('Running loss', np.mean(loss_hist), iter_num)
 
                 del classification_loss
                 del regression_loss
@@ -207,6 +216,8 @@ def main(args=None):
     retinanet.eval()
 
     torch.save(retinanet, 'model_final.pt'.format(epoch_num))
+
+    writer.close()
 
 
 if __name__ == '__main__':
