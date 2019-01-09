@@ -22,8 +22,8 @@ class Anchors(nn.Module):
         print("anchor")
         print(image.shape)
         image_shape = image.shape[2:]
-        print("anchor")
-        print(image_shape)
+        # print("anchor")
+        # print(image_shape)
         image_shape = np.array(image_shape)
         image_shapes = [(image_shape + 2 ** x - 1) // (2 ** x) for x in self.pyramid_levels]
 
