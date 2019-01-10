@@ -182,6 +182,14 @@ def main(args=None):
 
                 epoch_loss.append(float(loss))
 
+                # Bug included to test
+                print("Saving model at epoch: " + str(epoch_num))
+                torch.save(retinanet.module, 'snapshots/{}_retinanet_{}.pt'.format(parser.dataset, epoch_num))
+                torch.save(retinanet.state_dict(),
+                           'snapshots/{}_retinanet_state_dict_{}.pt'.format(parser.dataset, epoch_num))
+
+                input()
+
                 # print(
                 #     '\r Epoch: {} | Iteration: {} | Classification loss: {:1.5f} | Regression loss: {:1.5f} | Running loss: {:1.5f}'.format(
                 #         epoch_num, iter_num, float(classification_loss), float(regression_loss), np.mean(loss_hist)))
@@ -213,8 +221,8 @@ def main(args=None):
 
         # Saving model
         print("Saving model at epoch: " + str(epoch_num))
-        torch.save(retinanet.module, '{}_retinanet_{}.pt'.format(parser.dataset, epoch_num))
-        torch.save(retinanet.state_dict(), '{}_retinanet_state_dict_{}.pt'.format(parser.dataset, epoch_num))
+        torch.save(retinanet.module, 'snapshots/{}_retinanet_{}.pt'.format(parser.dataset, epoch_num))
+        torch.save(retinanet.state_dict(), 'snapshots/{}_retinanet_state_dict_{}.pt'.format(parser.dataset, epoch_num))
 
     retinanet.eval()
 
