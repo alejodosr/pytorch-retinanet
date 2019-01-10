@@ -208,7 +208,6 @@ def main(args=None):
                     retinanet.train()
                     print('Elapsed time: {}'.format(time.time() - st))
                     idxs = np.where(scores > 0.5)
-                    print(idxs)
 
                     for j in range(idxs[0].shape[0]):
                         bbox = transformed_anchors[idxs[0][j], :]
@@ -219,8 +218,11 @@ def main(args=None):
 
                     if len(idxs) > 0:
                         writer.add_image_with_boxes("Image eval", data['img'].squeeze(), np.array([x1, y1, x2, y2]), global_step=global_step)
+                        print("Detection of object in image")
                     else:
+                        print(data['img'].squeeze().size())
                         writer.add_image("Image eval", data['img'].squeeze(), gobal_step=global_step)
+                        print("No detected object")
 
                 # print(
                 #     '\r Epoch: {} | Iteration: {} | Classification loss: {:1.5f} | Regression loss: {:1.5f} | Running loss: {:1.5f}'.format(
