@@ -221,11 +221,11 @@ def main(args=None):
                         y2 = int(bbox[3])
 
                         detected_object = True
-                        writer.add_image_with_boxes("Image eval", data['img'].squeeze(), np.array([x1, y1, x2, y2]), global_step=global_step)
+                        writer.add_image_with_boxes("Image eval", 255 * unnormalize(data['img'][0, :, :, :]), np.array([x1, y1, x2, y2]), global_step=global_step)
                         print("Detection of object in image")
 
                     if not detected_object:
-                        writer.add_image("Image eval", data['img'].squeeze(), global_step=global_step)
+                        writer.add_image("Image eval", 255 * unnormalize(data['img'][0, :, :, :]), global_step=global_step)
                         print("No detected object")
 
                 # print(
