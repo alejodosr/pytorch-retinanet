@@ -211,6 +211,13 @@ def main(args=None):
 
                     print(data['img'].squeeze().size())
 
+                    img = np.array(255 * unnormalize(data['img'][0, :, :, :])).copy()
+
+                    img[img < 0] = 0
+                    img[img > 255] = 255
+
+                    img = np.transpose(img, (1, 2, 0))
+
 
                     detected_object = False
                     for j in range(idxs[0].shape[0]):
@@ -221,11 +228,11 @@ def main(args=None):
                         y2 = int(bbox[3])
 
                         detected_object = True
-                        writer.add_image_with_boxes("Image eval", 255 * unnormalize(data['img'].squeeze()), np.array([x1, y1, x2, y2]), global_step=global_step)
+                        writer.add_image_with_boxes("Image eval", img, np.array([x1, y1, x2, y2]), global_step=global_step)
                         print("Detection of object in image")
 
                     if not detected_object:
-                        writer.add_image("Image eval", 255 * unnormalize(data['img'].squeeze()), global_step=global_step)
+                        writer.add_image("Image eval", img, global_step=global_step)
                         print("No detected object")
 
                 # print(
