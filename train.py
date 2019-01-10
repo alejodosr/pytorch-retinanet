@@ -209,6 +209,10 @@ def main(args=None):
                     print('Elapsed time: {}'.format(time.time() - st))
                     idxs = np.where(scores > 0.5)
 
+                    print(data['img'].squeeze().size())
+
+
+                    detected_object = False
                     for j in range(idxs[0].shape[0]):
                         bbox = transformed_anchors[idxs[0][j], :]
                         x1 = int(bbox[0])
@@ -216,11 +220,11 @@ def main(args=None):
                         x2 = int(bbox[2])
                         y2 = int(bbox[3])
 
-                    if len(idxs) > 0:
+                        detected_object = True
                         writer.add_image_with_boxes("Image eval", data['img'].squeeze(), np.array([x1, y1, x2, y2]), global_step=global_step)
                         print("Detection of object in image")
-                    else:
-                        print(data['img'].squeeze().size())
+
+                    if not detected_object:
                         writer.add_image("Image eval", data['img'].squeeze(), gobal_step=global_step)
                         print("No detected object")
 
