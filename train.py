@@ -216,7 +216,7 @@ def main(args=None):
                     img[img < 0] = 0
                     img[img > 255] = 255
 
-                    img = np.transpose(img, (1, 2, 0))
+                    # img = np.transpose(img, (1, 2, 0))
 
 
                     detected_object = False
