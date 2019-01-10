@@ -115,13 +115,15 @@ def main(args=None):
         retinanet_coco_dict = retinanet_coco.state_dict()
 
         # 1. filter out unnecessary keys
+        print("Retinanet state dict pre-filter length: " + str(len(retinanet_coco_dict)))
         retinanet_coco_dict = { k:v for k,v in retinanet_coco_dict.iteritems() if k in retinanet_dict and v.size() == retinanet_dict[k].size() }
+        print("Retinanet state dict post-filter length: " + str(len(retinanet_coco_dict)))
 
         # 2. overwrite entries in the existing state dict
         retinanet_dict.update(retinanet_coco_dict)
 
         # 3. load the new state dict
-        retinanet.load_state_dict(retinanet_dict)
+        retinanet.load_state_dict(retinanet_dict, strict=False)
 
     use_gpu = True
 
@@ -181,14 +183,6 @@ def main(args=None):
                 loss_hist.append(float(loss))
 
                 epoch_loss.append(float(loss))
-
-                # Bug included to test
-                print("Saving model at epoch: " + str(epoch_num))
-                torch.save(retinanet.module, 'snapshots/{}_retinanet_{}.pt'.format(parser.dataset, epoch_num))
-                torch.save(retinanet.state_dict(),
-                           'snapshots/{}_retinanet_state_dict_{}.pt'.format(parser.dataset, epoch_num))
-
-                input()
 
                 # print(
                 #     '\r Epoch: {} | Iteration: {} | Classification loss: {:1.5f} | Regression loss: {:1.5f} | Running loss: {:1.5f}'.format(
