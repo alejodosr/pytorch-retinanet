@@ -225,7 +225,7 @@ def main(args=None):
                         print("Detection of object in image")
 
                     if not detected_object:
-                        writer.add_image("Image eval", data['img'].squeeze(), gobal_step=global_step)
+                        writer.add_image("Image eval", data['img'].squeeze(), global_step=global_step)
                         print("No detected object")
 
                 # print(
