@@ -208,6 +208,7 @@ def main(args=None):
                     retinanet.train()
                     print('Elapsed time: {}'.format(time.time() - st))
                     idxs = np.where(scores > 0.5)
+                    print(idxs)
 
                     for j in range(idxs[0].shape[0]):
                         bbox = transformed_anchors[idxs[0][j], :]
