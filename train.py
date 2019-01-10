@@ -54,6 +54,7 @@ def main(args=None):
     parser.add_argument('--depth', help='Resnet depth, must be one of 18, 34, 50, 101, 152', type=int, default=50)
     parser.add_argument('--epochs', help='Number of epochs', type=int, default=100)
     parser.add_argument('--batch_size', help='Batch size', type=int, default=1)
+    parser.add_argument('--images_period', help='Period for representing images', type=int, default=1000)
     parser.add_argument('--freeze_backbone', help='Freeze backbone', action='store_true')
 
     parser = parser.parse_args(args)
@@ -200,7 +201,7 @@ def main(args=None):
                 epoch_loss.append(float(loss))
 
                 # Each 1000 iterations show image
-                if global_step % 1000 == 0:
+                if global_step % parser.images_period == 0:
                     st = time.time()
                     scores, classification, transformed_anchors = retinanet(data['img'].cuda().float())
                     print('Elapsed time: {}'.format(time.time() - st))
