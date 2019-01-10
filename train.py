@@ -203,7 +203,9 @@ def main(args=None):
                 # Each 1000 iterations show image
                 if global_step % parser.images_period == 0:
                     st = time.time()
+                    retinanet.eval()
                     scores, classification, transformed_anchors = retinanet(data['img'].cuda().float())
+                    retinanet.train()
                     print('Elapsed time: {}'.format(time.time() - st))
                     idxs = np.where(scores > 0.5)
 
