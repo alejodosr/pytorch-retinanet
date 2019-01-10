@@ -160,17 +160,28 @@ class ClassificationModel(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, num_classes, block, layers):
+    def __init__(self, num_classes, block, layers, freeze_backbone=False):
         self.inplanes = 64
         super(ResNet, self).__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+        self.layer1 = self._make_layer(block, 64, layers[0], freeze_backbone=freeze_backbone)
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2, freeze_backbone=freeze_backbone)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2, freeze_backbone=freeze_backbone)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2, freeze_backbone=freeze_backbone)
+
+        if freeze_backbone:
+            print("Freezing backbone layers...")
+            self.conv1.weight.requires_grad = False
+            self.conv1.bias.requires_grad = False
+            self.bn1.weight.requires_grad = False
+            self.bn1.bias.requires_grad = False
+            self.relu.weight.requires_grad = False
+            self.relu.bias.requires_grad = False
+            self.maxpool.weight.requires_grad = False
+            self.maxpool.bias.requires_grad = False
 
         if block == BasicBlock:
             fpn_sizes = [self.layer2[layers[1]-1].conv2.out_channels, self.layer3[layers[2]-1].conv2.out_channels, self.layer4[layers[3]-1].conv2.out_channels]
@@ -208,7 +219,7 @@ class ResNet(nn.Module):
 
         self.freeze_bn()
 
-    def _make_layer(self, block, planes, blocks, stride=1):
+    def _make_layer(self, block, planes, blocks, stride=1, freeze_backbone=False):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
@@ -216,6 +227,11 @@ class ResNet(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(planes * block.expansion),
             )
+
+            if freeze_backbone:
+                for child in downsample.children():
+                    for param in child.parameters():
+                        param.requires_grad = False
 
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample))
@@ -282,55 +298,60 @@ class ResNet(nn.Module):
 
 
 
-def resnet18(num_classes, pretrained=False, **kwargs):
+def resnet18(num_classes, pretrained=False, freeze_backbone=False, **kwargs):
     """Constructs a ResNet-18 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        freeze_backbone (bool): If True, returns a model with the backbone with frozen weights
     """
-    model = ResNet(num_classes, BasicBlock, [2, 2, 2, 2], **kwargs)
+    model = ResNet(num_classes, BasicBlock, [2, 2, 2, 2], freeze_backbone=freeze_backbone, **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet18'], model_dir='.'), strict=False)
     return model
 
 
-def resnet34(num_classes, pretrained=False, **kwargs):
+def resnet34(num_classes, pretrained=False, freeze_backbone=False, **kwargs):
     """Constructs a ResNet-34 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        freeze_backbone (bool): If True, returns a model with the backbone with frozen weights
     """
-    model = ResNet(num_classes, BasicBlock, [3, 4, 6, 3], **kwargs)
+    model = ResNet(num_classes, BasicBlock, [3, 4, 6, 3], freeze_backbone=False, **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet34'], model_dir='.'), strict=False)
     return model
 
 
-def resnet50(num_classes, pretrained=False, **kwargs):
+def resnet50(num_classes, pretrained=False, freeze_backbone=False, **kwargs):
     """Constructs a ResNet-50 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        freeze_backbone (bool): If True, returns a model with the backbone with frozen weights
     """
-    model = ResNet(num_classes, Bottleneck, [3, 4, 6, 3], **kwargs)
+    model = ResNet(num_classes, Bottleneck, [3, 4, 6, 3], freeze_backbone=False, **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50'], model_dir='.'), strict=False)
     return model
 
-def resnet101(num_classes, pretrained=False, **kwargs):
+def resnet101(num_classes, pretrained=False, freeze_backbone=False, **kwargs):
     """Constructs a ResNet-101 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        freeze_backbone (bool): If True, returns a model with the backbone with frozen weights
     """
-    model = ResNet(num_classes, Bottleneck, [3, 4, 23, 3], **kwargs)
+    model = ResNet(num_classes, Bottleneck, [3, 4, 23, 3], freeze_backbone=False, **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet101'], model_dir='.'), strict=False)
     return model
 
 
-def resnet152(num_classes, pretrained=False, **kwargs):
+def resnet152(num_classes, pretrained=False, freeze_backbone=False, **kwargs):
     """Constructs a ResNet-152 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        freeze_backbone (bool): If True, returns a model with the backbone with frozen weights
     """
-    model = ResNet(num_classes, Bottleneck, [3, 8, 36, 3], **kwargs)
+    model = ResNet(num_classes, Bottleneck, [3, 8, 36, 3], freeze_backbone=False, **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet152'], model_dir='.'), strict=False)
     return model

@@ -9,6 +9,7 @@ import collections
 import sys
 
 import numpy as np
+import cv2
 
 import torch
 import torch.nn as nn
@@ -35,6 +36,11 @@ assert torch.__version__.split('.')[1] == '4'
 print('CUDA available: {}'.format(torch.cuda.is_available()))
 
 
+def draw_caption(image, box, caption):
+    b = np.array(box).astype(int)
+    cv2.putText(image, caption, (b[0], b[1] - 10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 2)
+    cv2.putText(image, caption, (b[0], b[1] - 10), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1)
+
 def main(args=None):
     parser = argparse.ArgumentParser(description='Simple training script for training a RetinaNet network.')
 
@@ -48,6 +54,7 @@ def main(args=None):
     parser.add_argument('--depth', help='Resnet depth, must be one of 18, 34, 50, 101, 152', type=int, default=50)
     parser.add_argument('--epochs', help='Number of epochs', type=int, default=100)
     parser.add_argument('--batch_size', help='Batch size', type=int, default=1)
+    parser.add_argument('--freeze_backbone', help='Freeze backbone', action='store_true')
 
     parser = parser.parse_args(args)
 
@@ -90,17 +97,19 @@ def main(args=None):
         sampler_val = AspectRatioBasedSampler(dataset_val, batch_size=1, drop_last=False)
         dataloader_val = DataLoader(dataset_val, num_workers=3, collate_fn=collater, batch_sampler=sampler_val)
 
+    print("The number of classes is: " + str(dataset_train.num_classes()))
+
     # Create the model
     if parser.depth == 18:
-        retinanet = model.resnet18(num_classes=dataset_train.num_classes(), pretrained=True)
+        retinanet = model.resnet18(num_classes=dataset_train.num_classes(), pretrained=True, freeze_backbone=parser.freeze_backbone)
     elif parser.depth == 34:
-        retinanet = model.resnet34(num_classes=dataset_train.num_classes(), pretrained=True)
+        retinanet = model.resnet34(num_classes=dataset_train.num_classes(), pretrained=True, freeze_backbone=parser.freeze_backbone)
     elif parser.depth == 50:
-        retinanet = model.resnet50(num_classes=dataset_train.num_classes(), pretrained=True)
+        retinanet = model.resnet50(num_classes=dataset_train.num_classes(), pretrained=True, freeze_backbone=parser.freeze_backbone)
     elif parser.depth == 101:
-        retinanet = model.resnet101(num_classes=dataset_train.num_classes(), pretrained=True)
+        retinanet = model.resnet101(num_classes=dataset_train.num_classes(), pretrained=True, freeze_backbone=parser.freeze_backbone)
     elif parser.depth == 152:
-        retinanet = model.resnet152(num_classes=dataset_train.num_classes(), pretrained=True)
+        retinanet = model.resnet152(num_classes=dataset_train.num_classes(), pretrained=True, freeze_backbone=parser.freeze_backbone)
     else:
         raise ValueError('Unsupported model depth, must be one of 18, 34, 50, 101, 152')
 
@@ -123,7 +132,7 @@ def main(args=None):
         retinanet_dict.update(retinanet_coco_dict)
 
         # 3. load the new state dict
-        retinanet.load_state_dict(retinanet_dict, strict=False)
+        retinanet.load_state_dict(retinanet_dict)
 
     use_gpu = True
 
@@ -137,7 +146,7 @@ def main(args=None):
 
     retinanet.training = True
 
-    optimizer = optim.Adam(retinanet.parameters(), lr=1e-5)
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, retinanet.parameters()), lr=1e-5)
 
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, verbose=True)
 
@@ -149,6 +158,10 @@ def main(args=None):
     print('Num training images: {}'.format(len(dataset_train)))
 
     writer = SummaryWriter('experiments')
+
+    unnormalize = UnNormalizer()
+
+    global_step = 0
 
     for epoch_num in range(parser.epochs):
 
@@ -180,18 +193,36 @@ def main(args=None):
 
                 optimizer.step()
 
+                global_step += 1
+
                 loss_hist.append(float(loss))
 
                 epoch_loss.append(float(loss))
+
+                # Each 1000 iterations show image
+                if global_step % 1000 == 0:
+                    st = time.time()
+                    scores, classification, transformed_anchors = retinanet(data['img'].cuda().float())
+                    print('Elapsed time: {}'.format(time.time() - st))
+                    idxs = np.where(scores > 0.5)
+
+                    for j in range(idxs[0].shape[0]):
+                        bbox = transformed_anchors[idxs[0][j], :]
+                        x1 = int(bbox[0])
+                        y1 = int(bbox[1])
+                        x2 = int(bbox[2])
+                        y2 = int(bbox[3])
+
+                    writer.add_image_with_boxes("Image eval", data['img'].squeeze(), np.array([x1, y1, x2, y2]), global_step=global_step)
 
                 # print(
                 #     '\r Epoch: {} | Iteration: {} | Classification loss: {:1.5f} | Regression loss: {:1.5f} | Running loss: {:1.5f}'.format(
                 #         epoch_num, iter_num, float(classification_loss), float(regression_loss), np.mean(loss_hist)))
 
                 # Plot in tensorboard
-                writer.add_scalar('Classification loss', float(classification_loss), iter_num)
-                writer.add_scalar('Regression loss', float(regression_loss), iter_num)
-                writer.add_scalar('Running loss', np.mean(loss_hist), iter_num)
+                writer.add_scalar('Classification loss', float(classification_loss), global_step)
+                writer.add_scalar('Regression loss', float(regression_loss), global_step)
+                writer.add_scalar('Running loss', np.mean(loss_hist), global_step)
 
                 del classification_loss
                 del regression_loss

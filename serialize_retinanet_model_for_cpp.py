@@ -124,16 +124,39 @@ preprocess = transforms.Compose([
 ])
 
 # Code for pyTorch retinanet
-PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/coco_resnet_50_map_0_335_state_dict.pt"
+# PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/coco_resnet_50_map_0_335_state_dict.pt"
+# PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/coco_resnet_50_map_0_335.pt"
+# PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/csv_retinanet_state_dict_2.pt"
+PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/csv_test2_coco_state_dict_0.pt"
+# PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/csv_retinanet_2.pt"
+
+
 
 num_classes = 80
 
 retinanet = model_cpp.resnet50(num_classes=num_classes,)
+
+# ## If state dicts are saved with Data Parallel and module is included
+# # original saved file with DataParallel
+# state_dict = torch.load(PATH_TO_WEIGHTS)
+# # create new OrderedDict that does not contain `module.`
+# from collections import OrderedDict
+# new_state_dict = OrderedDict()
+# for k, v in state_dict.items():
+#     name = k[7:] # remove `module.`
+#     new_state_dict[name] = v
+# # load params
+# retinanet.load_state_dict(new_state_dict)
+
+## Else
+# load params
 retinanet.load_state_dict(torch.load(PATH_TO_WEIGHTS))
+
+
 retinanet = retinanet.cuda()
 retinanet.eval()
 
-for i in range(5):
+for i in range(7):
     # An instance of your model.
     img_pil = Image.open("/home/alejandro/workspace/uav_detection/images/" + str(i + 1) + ".jpg")
     # img_pil.show()
@@ -175,32 +198,34 @@ for i in range(5):
     transformed_anchors = transformed_anchors[:, scores_over_thresh, :]
     print(transformed_anchors.size())
 
-    print(transformed_anchors[0,0,:])
+    if transformed_anchors.size()[1] != 0:
+        print(transformed_anchors[0,0,:])
 
-    scores = scores[:, scores_over_thresh, :]
-    print(scores.size())
+        scores = scores[:, scores_over_thresh, :]
+        print(scores.size())
 
-    idxs = np.where(scores.cpu().detach().numpy() > 0.5)
-    print(idxs)
+        idxs = np.where(scores.cpu().detach().numpy() > 0.5)
+        print(idxs)
 
     open_cv_image = np.array(img_pil)
     open_cv_image = cv2.resize(open_cv_image, (224, 224))
     # Convert RGB to BGR
     open_cv_image = open_cv_image[:, :, ::-1].copy()
 
-    # Apply non-max suprresion
-    boxes = non_max_suppression_fast(np.squeeze(transformed_anchors.cpu().detach().numpy(), axis=0), 0.5)
-    print(boxes.shape)
+    if transformed_anchors.size()[1] != 0:
+        # Apply non-max suprresion
+        boxes = non_max_suppression_fast(np.squeeze(transformed_anchors.cpu().detach().numpy(), axis=0), 0.5)
+        print(boxes.shape)
 
-    for j in range(boxes.shape[0]):
-        # bbox = transformed_anchors.cpu().detach().numpy()[idxs[0][j], :]
-        bbox = boxes[j, :]
-        x1 = int(bbox[0])
-        y1 = int(bbox[1])
-        x2 = int(bbox[2])
-        y2 = int(bbox[3])
+        for j in range(boxes.shape[0]):
+            # bbox = transformed_anchors.cpu().detach().numpy()[idxs[0][j], :]
+            bbox = boxes[j, :]
+            x1 = int(bbox[0])
+            y1 = int(bbox[1])
+            x2 = int(bbox[2])
+            y2 = int(bbox[3])
 
-        cv2.rectangle(open_cv_image, (x1, y1), (x2, y2), color=(0, 0, 255), thickness=2)
+            cv2.rectangle(open_cv_image, (x1, y1), (x2, y2), color=(0, 0, 255), thickness=2)
 
     cv2.imshow('img', open_cv_image)
     cv2.waitKey(0)
