@@ -214,7 +214,10 @@ def main(args=None):
                         x2 = int(bbox[2])
                         y2 = int(bbox[3])
 
-                    writer.add_image_with_boxes("Image eval", data['img'].squeeze(), np.array([x1, y1, x2, y2]), global_step=global_step)
+                    if len(idxs) > 0:
+                        writer.add_image_with_boxes("Image eval", data['img'].squeeze(), np.array([x1, y1, x2, y2]), global_step=global_step)
+                    else:
+                        writer.add_image("Image eval", data['img'].squeeze(), gobal_step=global_step)
 
                 # print(
                 #     '\r Epoch: {} | Iteration: {} | Classification loss: {:1.5f} | Regression loss: {:1.5f} | Running loss: {:1.5f}'.format(
