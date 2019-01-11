@@ -294,14 +294,17 @@ def main(args=None):
                             print("idxs shape: " + str(idxs[0].shape))
                             # bbox = transformed_anchors[idxs[0][j], :]
 
-                            bbox_tensor[j, 0] = int(bbox[0])
-                            bbox_tensor[j, 1] = int(bbox[1])
-                            bbox_tensor[j, 2] = int(bbox[2])
-                            bbox_tensor[j, 3] = int(bbox[3])
+                            bbox_tensor[j, 0] = float(bbox[0])
+                            bbox_tensor[j, 1] = float(bbox[1])
+                            bbox_tensor[j, 2] = float(bbox[2])
+                            bbox_tensor[j, 3] = float(bbox[3])
 
                             detected_object = True
 
-                        writer.add_image_with_boxes("Image eval", img_tensor, bbox_tensor, global_step=global_step)
+                            # Enconding the class number (classification result) into the represented global step
+                            tmp_step = global_step + idxs[0][0]
+
+                        writer.add_image_with_boxes("Image eval", img_tensor, bbox_tensor, global_step=tmp_step)
                         print("Detection of object in image")
 
                     if not detected_object:
