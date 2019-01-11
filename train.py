@@ -284,14 +284,14 @@ def main(args=None):
                     if transformed_anchors.size()[0] != 0:
                         # Apply non-max suprresion
                         boxes = non_max_suppression_fast(transformed_anchors.cpu().detach().numpy(), 0.5)
-                        print("Boxes shape: " + str(boxes.shape))
+                        # print("Boxes shape: " + str(boxes.shape))
 
                         bbox_tensor = torch.randn(boxes.shape[0], 4, dtype=torch.float)
 
                         for j in range(boxes.shape[0]):
                             bbox = boxes[j, :]
-                            print("Transformed anchors shape: " + str(transformed_anchors.shape))
-                            print("idxs shape: " + str(idxs[0].shape))
+                            # print("Transformed anchors shape: " + str(transformed_anchors.shape))
+                            # print("idxs shape: " + str(idxs[0].shape))
                             # bbox = transformed_anchors[idxs[0][j], :]
 
                             bbox_tensor[j, 0] = float(bbox[0])
@@ -305,7 +305,7 @@ def main(args=None):
                             tmp_step = global_step + idxs[0][0]
 
                         writer.add_image_with_boxes("Image eval", img_tensor, bbox_tensor, global_step=tmp_step)
-                        print("Detection of object in image")
+                        print("Detection of object in image (classes: " + str(idxs[0]) + ")")
 
                     if not detected_object:
                         writer.add_image("Image eval", img_tensor, global_step=global_step)
