@@ -306,7 +306,7 @@ def main(args=None):
 
                         writer.add_image_with_boxes("Image eval", img_tensor, bbox_tensor, global_step=global_step)
                         print("Detection of object in image (classes: " + str(classification.cpu()) + ")")
-                        print("with scores; " + str(scores.cpu()))
+                        print("with scores: " + str(scores.cpu()))
 
                     if not detected_object:
                         writer.add_image("Image eval", img_tensor, global_step=global_step)
