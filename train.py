@@ -218,9 +218,13 @@ def main(args=None):
 
                     # img = np.transpose(img, (1, 2, 0))
 
+                    img_tensor = unnormalize(data['img']).squeeze().float().cpu()
+                    img_tensor[img_tensor < 0] = 0
+                    img_tensor[img_tensor > 1] = 1
 
                     detected_object = False
                     for j in range(idxs[0].shape[0]):
+                        print("Transformed anchors shape: " + str(transformed_anchors.shape))
                         bbox = transformed_anchors[idxs[0][j], :]
                         x1 = int(bbox[0])
                         y1 = int(bbox[1])
@@ -228,11 +232,11 @@ def main(args=None):
                         y2 = int(bbox[3])
 
                         detected_object = True
-                        writer.add_image_with_boxes("Image eval", unnormalize(data['img']).squeeze().float().cpu(), np.array([x1, y1, x2, y2]), global_step=global_step)
+                        writer.add_image_with_boxes("Image eval", img_tensor, np.array([x1, y1, x2, y2]), global_step=global_step)
                         print("Detection of object in image")
 
                     if not detected_object:
-                        writer.add_image("Image eval", unnormalize(data['img']).squeeze().float().cpu(), global_step=global_step)
+                        writer.add_image("Image eval", img_tensor, global_step=global_step)
                         print("No detected object")
 
                 # print(
