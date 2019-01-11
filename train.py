@@ -297,7 +297,7 @@ def main(args=None):
                             y2 = int(bbox[3])
 
                             detected_object = True
-                            writer.add_image_with_boxes("Image eval", img_tensor, np.array([x1, y1, x2, y2]), global_step=global_step)
+                            writer.add_image_with_boxes("Image eval", img_tensor, [x1, y1, x2, y2], global_step=global_step)
                             print("Detection of object in image")
 
                     if not detected_object:
