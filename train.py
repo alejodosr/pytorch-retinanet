@@ -225,6 +225,7 @@ def main(args=None):
                     detected_object = False
                     for j in range(idxs[0].shape[0]):
                         print("Transformed anchors shape: " + str(transformed_anchors.shape))
+                        print("idxs shape: " + str(idxs[0].shape))
                         bbox = transformed_anchors[idxs[0][j], :]
                         x1 = int(bbox[0])
                         y1 = int(bbox[1])
