@@ -41,6 +41,63 @@ def draw_caption(image, box, caption):
     cv2.putText(image, caption, (b[0], b[1] - 10), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 2)
     cv2.putText(image, caption, (b[0], b[1] - 10), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1)
 
+# Malisiewicz et al.
+def non_max_suppression_fast(boxes, overlapThresh):
+    # if there are no boxes, return an empty list
+    if len(boxes) == 0:
+        return []
+
+    # if the bounding boxes integers, convert them to floats --
+    # this is important since we'll be doing a bunch of divisions
+    if boxes.dtype.kind == "i":
+        boxes = boxes.astype("float")
+
+    # initialize the list of picked indexes
+    pick = []
+
+    # grab the coordinates of the bounding boxes
+    x1 = boxes[:, 0]
+    y1 = boxes[:, 1]
+    x2 = boxes[:, 2]
+    y2 = boxes[:, 3]
+
+    # compute the area of the bounding boxes and sort the bounding
+    # boxes by the bottom-right y-coordinate of the bounding box
+    area = (x2 - x1 + 1) * (y2 - y1 + 1)
+    idxs = np.argsort(y2)
+
+    # keep looping while some indexes still remain in the indexes
+    # list
+    while len(idxs) > 0:
+        # grab the last index in the indexes list and add the
+        # index value to the list of picked indexes
+        last = len(idxs) - 1
+        i = idxs[last]
+        pick.append(i)
+
+        # find the largest (x, y) coordinates for the start of
+        # the bounding box and the smallest (x, y) coordinates
+        # for the end of the bounding box
+        xx1 = np.maximum(x1[i], x1[idxs[:last]])
+        yy1 = np.maximum(y1[i], y1[idxs[:last]])
+        xx2 = np.minimum(x2[i], x2[idxs[:last]])
+        yy2 = np.minimum(y2[i], y2[idxs[:last]])
+
+        # compute the width and height of the bounding box
+        w = np.maximum(0, xx2 - xx1 + 1)
+        h = np.maximum(0, yy2 - yy1 + 1)
+
+        # compute the ratio of overlap
+        overlap = (w * h) / area[idxs[:last]]
+
+        # delete all indexes from the index list that have
+        idxs = np.delete(idxs, np.concatenate(([last],
+                                               np.where(overlap > overlapThresh)[0])))
+
+    # return only the bounding boxes that were picked using the
+    # integer data type
+    return boxes[pick].astype("int")
+
 def main(args=None):
     parser = argparse.ArgumentParser(description='Simple training script for training a RetinaNet network.')
 
@@ -207,7 +264,7 @@ def main(args=None):
                     scores, classification, transformed_anchors = retinanet(data['img'].float().cuda())
                     retinanet.train()
                     print('Elapsed time: {}'.format(time.time() - st))
-                    idxs = np.where(scores > 0.5)
+                    idxs = np.where(scores.cpu().detach().numpy() > 0.5)
 
                     print(data['img'].squeeze().size())
 
@@ -223,18 +280,25 @@ def main(args=None):
                     img_tensor[img_tensor > 1] = 1
 
                     detected_object = False
-                    for j in range(idxs[0].shape[0]):
-                        print("Transformed anchors shape: " + str(transformed_anchors.shape))
-                        print("idxs shape: " + str(idxs[0].shape))
-                        bbox = transformed_anchors[idxs[0][j], :]
-                        x1 = int(bbox[0])
-                        y1 = int(bbox[1])
-                        x2 = int(bbox[2])
-                        y2 = int(bbox[3])
 
-                        detected_object = True
-                        writer.add_image_with_boxes("Image eval", img_tensor, np.array([x1, y1, x2, y2]), global_step=global_step)
-                        print("Detection of object in image")
+                    if transformed_anchors.size()[0] != 0:
+                        # Apply non-max suprresion
+                        boxes = non_max_suppression_fast(transformed_anchors.cpu().detach().numpy(), 0.5)
+                        print("Boxes shape: " + str(boxes.shape))
+
+                        for j in range(boxes.shape[0]):
+                            bbox = boxes[j, :]
+                            print("Transformed anchors shape: " + str(transformed_anchors.shape))
+                            print("idxs shape: " + str(idxs[0].shape))
+                            # bbox = transformed_anchors[idxs[0][j], :]
+                            x1 = int(bbox[0])
+                            y1 = int(bbox[1])
+                            x2 = int(bbox[2])
+                            y2 = int(bbox[3])
+
+                            detected_object = True
+                            writer.add_image_with_boxes("Image eval", img_tensor, np.array([x1, y1, x2, y2]), global_step=global_step)
+                            print("Detection of object in image")
 
                     if not detected_object:
                         writer.add_image("Image eval", img_tensor, global_step=global_step)
