@@ -38,7 +38,7 @@ def main(args=None):
         dataset_val = CocoDataset(parser.coco_path, set_name='val2017',
                                   transform=transforms.Compose([Normalizer(), Resizer()]))
     elif parser.dataset == 'csv':
-        dataset_val = CSVDataset(train_file=parser.csv_train, class_list=parser.csv_classes,
+        dataset_val = CSVDataset(train_file=parser.csv_val, class_list=parser.csv_classes,
                                  transform=transforms.Compose([Normalizer(), Resizer()]))
     else:
         raise ValueError('Dataset type not understood (must be csv or coco), exiting.')
@@ -66,6 +66,7 @@ def main(args=None):
     for idx, data in enumerate(dataloader_val):
 
         with torch.no_grad():
+            print("Image size: " + str(data['img'].size()))
             st = time.time()
             scores, classification, transformed_anchors = retinanet(data['img'].cuda().float())
             print('Elapsed time: {}'.format(time.time() - st))
