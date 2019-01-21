@@ -7,6 +7,7 @@ from utils import BasicBlock, Bottleneck, BBoxTransform, ClipBoxes
 from anchors import Anchors
 import losses
 from lib.nms.pth_nms import pth_nms
+import torchvision
 
 def nms(dets, thresh):
     "Dispatch to either CPU or GPU NMS implementations.\
@@ -229,12 +230,15 @@ class ResNet(nn.Module):
             )
 
             if freeze_backbone:
+                print("Freezing downsample layers...")
                 for child in downsample.children():
                     for param in child.parameters():
                         param.requires_grad = False
+                for param in downsample.parameters():
+                    param.requires_grad = False
 
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
+        layers.append(block(self.inplanes, planes, stride, downsample, freeze_backbone=True))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes))
@@ -328,16 +332,18 @@ def resnet50(num_classes, pretrained=False, freeze_backbone=False, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         freeze_backbone (bool): If True, returns a model with the backbone with frozen weights
     """
-    model = ResNet(num_classes, Bottleneck, [3, 4, 6, 3], freeze_backbone=False, **kwargs)
+    model = ResNet(num_classes, Bottleneck, [3, 4, 6, 3], freeze_backbone=freeze_backbone, **kwargs)
     if pretrained:
-        if freeze_backbone:
-            print("Backbone weights are being frozen...")
-            resnet = model_zoo.load_url(model_urls['resnet50'], model_dir='.')
-            for param in resnet.parameters():
-                param.requires_grad = False
-            model.load_state_dict(resnet, strict=False)
-        else:
-            model.load_state_dict(model_zoo.load_url(model_urls['resnet50'], model_dir='.'), strict=False)
+        # if freeze_backbone:
+        #     print("Backbone weights are being frozen...")
+        #     resnet = torchvision.models.resnet18(pretrained=True)
+        #     for param in resnet.parameters():
+        #         param.requires_grad = False
+        #     model.load_state_dict(resnet.state_dict(), strict=False)
+        # else:
+        #     model.load_state_dict(model_zoo.load_url(model_urls['resnet50'], model_dir='.'), strict=False)
+
+        model.load_state_dict(model_zoo.load_url(model_urls['resnet50'], model_dir='.'), strict=False)
 
     return model
 

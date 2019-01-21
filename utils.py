@@ -42,7 +42,7 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, freeze_backbone=False):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -54,6 +54,24 @@ class Bottleneck(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
+
+        if freeze_backbone:
+            print("Freezing bottleneck...")
+            self.conv1.weight.requires_grad = False
+            self.conv1.bias.requires_grad = False
+            self.bn1.weight.requires_grad = False
+            self.bn1.bias.requires_grad = False
+            self.conv2.weight.requires_grad = False
+            self.conv2.bias.requires_grad = False
+            self.bn2.weight.requires_grad = False
+            self.bn2.bias.requires_grad = False
+            self.conv3.weight.requires_grad = False
+            self.conv3.bias.requires_grad = False
+            self.bn3.weight.requires_grad = False
+            self.bn3.bias.requires_grad = False
+            self.relu.weight.requires_grad = False
+            self.relu.bias.requires_grad = False
+
 
     def forward(self, x):
         residual = x
