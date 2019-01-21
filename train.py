@@ -106,7 +106,8 @@ def main(args=None):
     parser.add_argument('--csv_train', help='Path to file containing training annotations (see readme)')
     parser.add_argument('--csv_classes', help='Path to file containing class list (see readme)')
     parser.add_argument('--csv_val', help='Path to file containing validation annotations (optional, see readme)')
-    parser.add_argument('--pretrained', help='Path to file containing pretrained model (optional, see readme)')
+    parser.add_argument('--pretrained', help='Path to file containing pretrained model on COCO dataset (optional, see readme)')
+    # parser.add_argument('--snapshot', help='Path to file containing snapshot model (optional, see readme)')
 
     parser.add_argument('--depth', help='Resnet depth, must be one of 18, 34, 50, 101, 152', type=int, default=50)
     parser.add_argument('--epochs', help='Number of epochs', type=int, default=100)
@@ -172,25 +173,48 @@ def main(args=None):
         raise ValueError('Unsupported model depth, must be one of 18, 34, 50, 101, 152')
 
     if parser.pretrained is not None:
-        # Load model to be trained
-        retinanet_dict = retinanet.state_dict()
+        if parser.depth == 50:
+            # Load model to be trained
+            retinanet_dict = retinanet.state_dict()
 
-        # Load pretrained model
-        COCO_NUM_CLASSES = 80
-        retinanet_coco = model.resnet50(num_classes=COCO_NUM_CLASSES, )
-        retinanet_coco.load_state_dict(torch.load(parser.pretrained))
-        retinanet_coco_dict = retinanet_coco.state_dict()
+            # Load pretrained model
+            COCO_NUM_CLASSES = 80
+            retinanet_coco = model.resnet50(num_classes=COCO_NUM_CLASSES, )
+            retinanet_coco.load_state_dict(torch.load(parser.pretrained))
+            retinanet_coco_dict = retinanet_coco.state_dict()
 
-        # 1. filter out unnecessary keys
-        print("Retinanet state dict pre-filter length: " + str(len(retinanet_coco_dict)))
-        retinanet_coco_dict = { k:v for k,v in retinanet_coco_dict.iteritems() if k in retinanet_dict and v.size() == retinanet_dict[k].size() }
-        print("Retinanet state dict post-filter length: " + str(len(retinanet_coco_dict)))
+            # 1. filter out unnecessary keys
+            print("Retinanet state dict pre-filter length: " + str(len(retinanet_coco_dict)))
+            retinanet_coco_dict = { k:v for k,v in retinanet_coco_dict.iteritems() if k in retinanet_dict and v.size() == retinanet_dict[k].size() }
+            print("Retinanet state dict post-filter length: " + str(len(retinanet_coco_dict)))
 
-        # 2. overwrite entries in the existing state dict
-        retinanet_dict.update(retinanet_coco_dict)
+            # 2. overwrite entries in the existing state dict
+            retinanet_dict.update(retinanet_coco_dict)
 
-        # 3. load the new state dict
-        retinanet.load_state_dict(retinanet_dict)
+            # 3. load the new state dict
+            retinanet.load_state_dict(retinanet_dict)
+        else:
+            raise ValueError('Unsupported pretrained model depth, must be 50')
+
+    # if parser.snapshot is not None:
+    #     if parser.depth == 50:
+    #         ## If state dicts are saved with Data Parallel and module is included
+    #         # original saved file with DataParallel
+    #         state_dict = torch.load(parser.snapshot)
+    #         # create new OrderedDict that does not contain `module.`
+    #         from collections import OrderedDict
+    #         new_state_dict = OrderedDict()
+    #         for k, v in state_dict.items():
+    #             name = k[7:]  # remove `module.`
+    #             new_state_dict[name] = v
+    #         # load params
+    #         retinanet.load_state_dict(new_state_dict)
+    #         # Print some info
+    #         print("Snapshot successfully loaded")
+    #
+    #     else:
+    #         raise ValueError('Unsupported snapshot model depth, must be 50')
+
 
     use_gpu = True
 
@@ -206,7 +230,7 @@ def main(args=None):
 
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, retinanet.parameters()), lr=1e-5)
 
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, verbose=True)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2, verbose=True)
 
     loss_hist = collections.deque(maxlen=500)
 
@@ -247,7 +271,7 @@ def main(args=None):
 
                 loss.backward()
 
-                torch.nn.utils.clip_grad_norm_(retinanet.parameters(), 0.1)
+                torch.nn.utils.clip_grad_norm_(retinanet.parameters(), 0.001)
 
                 optimizer.step()
 

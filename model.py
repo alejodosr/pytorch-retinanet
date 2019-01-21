@@ -330,7 +330,15 @@ def resnet50(num_classes, pretrained=False, freeze_backbone=False, **kwargs):
     """
     model = ResNet(num_classes, Bottleneck, [3, 4, 6, 3], freeze_backbone=False, **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet50'], model_dir='.'), strict=False)
+        if freeze_backbone:
+            print("Backbone weights are being frozen...")
+            resnet = model_zoo.load_url(model_urls['resnet50'], model_dir='.')
+            for param in resnet.parameters():
+                param.requires_grad = False
+            model.load_state_dict(resnet, strict=False)
+        else:
+            model.load_state_dict(model_zoo.load_url(model_urls['resnet50'], model_dir='.'), strict=False)
+
     return model
 
 def resnet101(num_classes, pretrained=False, freeze_backbone=False, **kwargs):
