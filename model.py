@@ -181,7 +181,6 @@ class ResNet(nn.Module):
             self.bn1.bias.requires_grad = False
             self.relu.requires_grad = False
             self.maxpool.requires_grad = False
-            self.maxpool.bias.requires_grad = False
 
         if block == BasicBlock:
             fpn_sizes = [self.layer2[layers[1]-1].conv2.out_channels, self.layer3[layers[2]-1].conv2.out_channels, self.layer4[layers[3]-1].conv2.out_channels]
