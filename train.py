@@ -264,7 +264,7 @@ def main(args=None):
         if parser.model_name is not None:
             # Saving model back to drive
             print("Saving back to Drive.. model(" + parser.model_name + ")")
-            drive_path = 'cp -rf "snapshots/*"' + ' "/content/drive/My Drive/PhD/cloud/projects/' + parser.project_name + '/results/training/' + parser.model_name + '"'
+            drive_path = 'cp -rf snapshots/*' + ' /content/drive/My Drive/PhD/cloud/projects/' + parser.project_name + '/results/training/' + parser.model_name
             commands.getstatusoutput(drive_path)
 
         for iter_num, data in enumerate(dataloader_train):
