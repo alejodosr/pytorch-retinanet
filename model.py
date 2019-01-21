@@ -176,7 +176,7 @@ class ResNet(nn.Module):
         if freeze_backbone:
             print("Freezing backbone layers...")
             self.conv1.weight.requires_grad = False
-            self.conv1.bias.requires_grad = False
+            # self.conv1.bias.requires_grad = False # No bias
             self.bn1.weight.requires_grad = False
             self.bn1.bias.requires_grad = False
             self.relu.weight.requires_grad = False
