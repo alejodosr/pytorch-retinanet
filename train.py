@@ -29,6 +29,8 @@ from torch.utils.data import Dataset, DataLoader
 import coco_eval
 import csv_eval
 
+import commands
+
 from tensorboardX import SummaryWriter
 
 assert torch.__version__.split('.')[1] == '4'
@@ -107,6 +109,8 @@ def main(args=None):
     parser.add_argument('--csv_classes', help='Path to file containing class list (see readme)')
     parser.add_argument('--csv_val', help='Path to file containing validation annotations (optional, see readme)')
     parser.add_argument('--pretrained', help='Path to file containing pretrained model on COCO dataset (optional, see readme)')
+    parser.add_argument('--model_name', help='Name of the model being saved to drive (optional, see readme)')
+    parser.add_argument('--project_name', help='Name of the project being saved to drive (optional, see readme)')
     # parser.add_argument('--snapshot', help='Path to file containing snapshot model (optional, see readme)')
 
     parser.add_argument('--depth', help='Resnet depth, must be one of 18, 34, 50, 101, 152', type=int, default=50)
@@ -252,6 +256,17 @@ def main(args=None):
 
         epoch_loss = []
 
+        # Saving model
+        print("Saving model at epoch: " + str(epoch_num))
+        torch.save(retinanet.module, 'snapshots/{}_retinanet_{}.pt'.format(parser.dataset, epoch_num))
+        torch.save(retinanet.state_dict(), 'snapshots/{}_retinanet_state_dict_{}.pt'.format(parser.dataset, epoch_num))
+
+        if parser.model_name is not None:
+            # Saving model back to drive
+            print("Saving back to Drive.. model(" + parser.model_name + ")")
+            drive_path = 'cp -rf "snapshots/*' + ' "/content/drive/My Drive/PhD/cloud/projects/' + parser.project_name + '/results/training/' + parser.model_name + '"'
+            commands.getstatusoutput(drive_path)
+
         for iter_num, data in enumerate(dataloader_train):
             try:
                 optimizer.zero_grad()
@@ -366,11 +381,6 @@ def main(args=None):
         scheduler.step(np.mean(epoch_loss))
 
         writer.add_scalar('Epoch loss', np.mean(loss_hist), epoch_num)
-
-        # Saving model
-        print("Saving model at epoch: " + str(epoch_num))
-        torch.save(retinanet.module, 'snapshots/{}_retinanet_{}.pt'.format(parser.dataset, epoch_num))
-        torch.save(retinanet.state_dict(), 'snapshots/{}_retinanet_state_dict_{}.pt'.format(parser.dataset, epoch_num))
 
     retinanet.eval()
 
