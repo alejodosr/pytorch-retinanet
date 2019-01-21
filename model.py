@@ -179,9 +179,8 @@ class ResNet(nn.Module):
             # self.conv1.bias.requires_grad = False # No bias
             self.bn1.weight.requires_grad = False
             self.bn1.bias.requires_grad = False
-            self.relu.weight.requires_grad = False
-            self.relu.bias.requires_grad = False
-            self.maxpool.weight.requires_grad = False
+            self.relu.requires_grad = False
+            self.maxpool.requires_grad = False
             self.maxpool.bias.requires_grad = False
 
         if block == BasicBlock:
