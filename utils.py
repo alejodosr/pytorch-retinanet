@@ -69,9 +69,7 @@ class Bottleneck(nn.Module):
             # self.conv3.bias.requires_grad = False # No bias
             self.bn3.weight.requires_grad = False
             self.bn3.bias.requires_grad = False
-            self.relu.weight.requires_grad = False
-            self.relu.bias.requires_grad = False
-
+            self.relu.requires_grad = False
 
     def forward(self, x):
         residual = x
