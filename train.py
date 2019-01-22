@@ -117,6 +117,7 @@ def main(args=None):
     parser.add_argument('--epochs', help='Number of epochs', type=int, default=100)
     parser.add_argument('--batch_size', help='Batch size', type=int, default=1)
     parser.add_argument('--images_period', help='Period for representing images', type=int, default=1000)
+    parser.add_argument('--steps_per_epoch', help='Steps per epoch', type=int, default=10000)
     parser.add_argument('--freeze_backbone', help='Freeze backbone', action='store_true')
 
     parser = parser.parse_args(args)
@@ -256,18 +257,6 @@ def main(args=None):
 
         epoch_loss = []
 
-        # Saving model
-        print("Saving model at epoch: " + str(epoch_num))
-        torch.save(retinanet.module, 'snapshots/{}_retinanet_{}.pt'.format(parser.dataset, epoch_num))
-        torch.save(retinanet.state_dict(), 'snapshots/{}_retinanet_state_dict_{}.pt'.format(parser.dataset, epoch_num))
-
-        if parser.model_name is not None:
-            # Saving model back to drive
-            print("Saving back to Drive.. model(" + parser.model_name + ")")
-            drive_path = 'cp -rf snapshots/*' + ' "/content/drive/My Drive/PhD/cloud/projects/' + parser.project_name + '/results/training/' + parser.model_name + '"'
-            sts, text = commands.getstatusoutput(drive_path)
-            print(text)
-
         for iter_num, data in enumerate(dataloader_train):
             try:
                 optimizer.zero_grad()
@@ -296,6 +285,22 @@ def main(args=None):
                 loss_hist.append(float(loss))
 
                 epoch_loss.append(float(loss))
+
+                if global_step % parser.steps_per_epoch == 0:
+                    # Saving model
+                    print("Saving model at epoch: " + str(epoch_num))
+                    torch.save(retinanet.module, 'snapshots/{}_retinanet_{}.pt'.format(parser.dataset, epoch_num))
+                    torch.save(retinanet.state_dict(),
+                               'snapshots/{}_retinanet_state_dict_{}.pt'.format(parser.dataset, epoch_num))
+
+                    if parser.model_name is not None:
+                        # Saving model back to drive
+                        print("Saving back to Drive.. model(" + parser.model_name + ")")
+                        drive_path = 'cp -rf snapshots/*' + ' "/content/drive/My Drive/PhD/cloud/projects/' + parser.project_name + '/results/training/' + parser.model_name + '"'
+                        sts, text = commands.getstatusoutput(drive_path)
+                        print(text)
+
+                    break
 
                 # Each 1000 iterations show image
                 if global_step % parser.images_period == 0:

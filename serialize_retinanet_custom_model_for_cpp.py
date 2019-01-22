@@ -172,34 +172,15 @@ def nms(boxes, scores, overlap=0.5, top_k=200):
         # print(raw_input())
     return keep, count
 
-# from anchors import Anchors
-# import losses
-# from dataloader import CocoDataset, CSVDataset, collater, Resizer, AspectRatioBasedSampler, Augmenter, UnNormalizer, Normalizer
-# from torch.utils.data import Dataset, DataLoader
-#
-# import coco_eval
-# import csv_eval
+from anchors import Anchors
+import losses
+from dataloader import CocoDataset, CSVDataset, collater, Resizer, AspectRatioBasedSampler, Augmenter, UnNormalizer, Normalizer
+from torch.utils.data import Dataset, DataLoader
+
+import coco_eval
+import csv_eval
 
 # assert torch.__version__.split('.')[1] == '4'
-
-# # Code for pyTorch retinanet
-# PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/coco_resnet_50_map_0_335_state_dict.pt"
-#
-# retinanet = model_cpp.resnet50(num_classes=80,)
-# retinanet.load_state_dict(torch.load(PATH_TO_WEIGHTS))
-# retinanet = retinanet.cuda()
-# retinanet.eval()
-#
-# example = torch.cuda.FloatTensor(1, 3, 224, 224).normal_()
-#
-# # Use torch.jit.trace to generate a torch.jit.ScriptModule via tracing.
-# traced_script_module = torch.jit.trace(retinanet, example)
-#
-# output = traced_script_module(torch.cuda.FloatTensor(1, 3, 224, 224).fill_(1))
-#
-# print(output)
-#
-# traced_script_module.save("pytorch_retinanet_model.pt")
 
 normalize = Normalizer()
 
@@ -222,7 +203,7 @@ torch.cuda.empty_cache()
 # Code for pyTorch retinanet
 # PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/coco_resnet_50_map_0_335_state_dict.pt"
 # PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/coco_resnet_50_map_0_335.pt"
-PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/csv_retinanet_state_dict_2.pt"
+PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/csv_retinanet_state_dict_4_ft.pt"
 # PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/csv_test2_coco_state_dict_0.pt"
 # PATH_TO_WEIGHTS="/home/alejandro/py_workspace/pytorch-retinanet/snapshots/csv_retinanet_2.pt"
 
@@ -259,7 +240,7 @@ unnormalize = UnNormalizer()
 
 #### Parameters
 SQUARE_SIZE = 512
-SAVE_TRACED_MODEL = False
+SAVE_TRACED_MODEL = True
 THRESHOLD = 0.5
 LABELS = ["drone", "bird", "car"]
 
@@ -274,10 +255,10 @@ if SAVE_TRACED_MODEL ==  True:
 
     print(output)
 
-    traced_script_module.save("pytorch_uav_retinanet_model.pt")
+    traced_script_module.save("pytorch_uav_retinanet_model_ft_4_" + str(SQUARE_SIZE) + ".pt")
 
     print("SUCCESSFULLY TRACED AND SAVED RETINANET MODEL")
-    input()
+    raw_input()
 
 img_i = 7
 
